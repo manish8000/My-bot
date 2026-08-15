@@ -11,3 +11,5 @@ dnspython
 aiofiles
 bs4
 requests
+groq
+
