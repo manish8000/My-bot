@@ -385,5 +385,6 @@ async def auth_cmd(client: Client, message: Message):
 @Client.on_message(filters.command("rem_auth") & filters.user(ADMIN_ID))
 async def rem_auth_cmd(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("
+        return await message.reply_text("Aapka message yahan hai")
+        
     
