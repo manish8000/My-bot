@@ -23,8 +23,12 @@ def run_health_check_server():
 
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
-# MongoDB Setup
-mongo_client = AsyncIOMotorClient(config.MONGO_URI)
+# MongoDB Setup (SSL/TLS Fix Added Here)
+mongo_client = AsyncIOMotorClient(
+    config.MONGO_URI,
+    tls=True,
+    tlsAllowInvalidCertificates=True
+)
 db = mongo_client["QuizBotDB"]
 
 # Bot Setup
