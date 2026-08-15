@@ -5,7 +5,7 @@ from pyrogram import Client
 from motor.motor_asyncio import AsyncIOMotorClient
 import config
 
-# Koyeb Health Check पास करने के लिए Web Server
+# Koyeb Health Check Web Server
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -23,7 +23,7 @@ def run_health_check_server():
 
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
-# MongoDB Setup (SSL/TLS Fix Added Here)
+# MongoDB Setup
 mongo_client = AsyncIOMotorClient(
     config.MONGO_URI,
     tls=True,
@@ -42,7 +42,6 @@ app = Client(
     plugins=plugins
 )
 
-# Attach Database to Client
 app.db = db
 
 if __name__ == "__main__":
