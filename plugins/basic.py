@@ -1,12 +1,13 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from pyrogram.enums import ParseMode
 
 @Client.on_message(filters.command("start"))
 async def start_cmd(client: Client, message: Message):
     user = message.from_user
     user_name = user.first_name + (f" {user.last_name}" if user.last_name else "")
     
-    # User DB Save (Safe async call)
+    # Safe User DB Save
     try:
         if hasattr(client, "db"):
             await client.db["users"].update_one(
@@ -45,5 +46,16 @@ async def help_cmd(client: Client, message: Message):
         "• `/pause` - Pause Quiz Temporarily ⏸️\n"
         "• `/resume` - Resume Quiz ▶️"
     )
-    await message.reply_text(text, parse_mode="markdown")
+    await message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+@Client.on_message(filters.command("features"))
+async def features_cmd(client: Client, message: Message):
+    await message.reply_text(
+        "🎟️ **Premium Bot Features:**\n"
+        "1. Instant PDF/TXT to Quiz Converter\n"
+        "2. Custom Timer & Negative Marking\n"
+        "3. Live Leaderboard & HTML Report Generation\n"
+        "4. Auto-Scrape Polls from Public Channels\n"
+        "5. Group Moderation (Mute/Ban/Welcome)"
+    )
     
