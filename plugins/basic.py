@@ -4,10 +4,19 @@ from pyrogram.types import Message
 @Client.on_message(filters.command("start"))
 async def start_cmd(client: Client, message: Message):
     user = message.from_user
-    db = client.db["users"]
     user_name = user.first_name + (f" {user.last_name}" if user.last_name else "")
-    await db.update_one({"user_id": user.id}, {"$set": {"name": user_name}}, upsert=True)
     
+    # User DB Save (Safe async call)
+    try:
+        if hasattr(client, "db"):
+            await client.db["users"].update_one(
+                {"user_id": user.id},
+                {"$set": {"name": user_name}},
+                upsert=True
+            )
+    except Exception as e:
+        print(f"DB Update Error: {e}")
+
     await message.reply_text(
         f"🪐 **Hello {user.first_name}!**\n\n"
         "Welcome to **Premium Quiz Bot** 🚀\n"
@@ -37,15 +46,4 @@ async def help_cmd(client: Client, message: Message):
         "• `/resume` - Resume Quiz ▶️"
     )
     await message.reply_text(text, parse_mode="markdown")
-
-@Client.on_message(filters.command("features"))
-async def features_cmd(client: Client, message: Message):
-    await message.reply_text(
-        "🎟️ **Premium Bot Features:**\n"
-        "1. Instant PDF/TXT to Quiz Converter\n"
-        "2. Custom Timer & Negative Marking\n"
-        "3. Live Leaderboard & HTML Report Generation\n"
-        "4. Auto-Scrape Polls from Public Channels\n"
-        "5. Group Moderation (Mute/Ban/Welcome)"
-    )
     
