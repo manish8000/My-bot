@@ -2,9 +2,10 @@ import os
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pyrogram import Client
+from motor.motor_asyncio import AsyncIOMotorClient
 import config
 
-# Koyeb Health Check पास करने के लिए छोटा Web Server
+# Koyeb Health Check पास करने के लिए Web Server
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -13,15 +14,18 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"Bot is Running Alive!")
 
     def log_message(self, format, *args):
-        return  # Logs को साफ़ रखने के लिए HTTP लॉग्स छिपाएँ
+        return
 
 def run_health_check_server():
     port = int(os.environ.get("PORT", 8000))
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
-# Web Server को background thread में चालू करें
 threading.Thread(target=run_health_check_server, daemon=True).start()
+
+# MongoDB Setup
+mongo_client = AsyncIOMotorClient(config.MONGO_URI)
+db = mongo_client["QuizBotDB"]
 
 # Bot Setup
 plugins = dict(root="plugins")
@@ -33,6 +37,9 @@ app = Client(
     bot_token=config.BOT_TOKEN,
     plugins=plugins
 )
+
+# Attach Database to Client
+app.db = db
 
 if __name__ == "__main__":
     print("🚀 Premium Quiz Bot Started Successfully!")
