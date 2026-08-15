@@ -125,7 +125,7 @@ async def ai_quiz(client: Client, message: Message):
         completion = await loop.run_in_executor(
             None,
             lambda: groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
                 max_tokens=1000
@@ -283,7 +283,7 @@ async def resume_cmd(client: Client, message: Message):
 
 @Client.on_message(filters.command("fast"))
 async def fast_cmd(client: Client, message: Message):
-    await message.reply_text("⚡ **Fast Mode (10s Timer Active)**", parse_mode=ParseMode.MARKDOWN)
+    await message.reply_text("⚡ **Fast Mode (10s Timer Active active)**", parse_mode=ParseMode.MARKDOWN)
 
 @Client.on_message(filters.command("slow"))
 async def slow_cmd(client: Client, message: Message):
@@ -385,6 +385,8 @@ async def auth_cmd(client: Client, message: Message):
 @Client.on_message(filters.command("rem_auth") & filters.user(ADMIN_ID))
 async def rem_auth_cmd(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("Aapka message yahan hai")
-        
+        return await message.reply_text("🔓 उपयोग: `/rem_auth <user_id>`")
     
+    uid = int(message.command[1])
+    AUTH_USERS.discard(uid)
+    await message.reply_text(f"🔓 User `{uid}` authorization removed.")
