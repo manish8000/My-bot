@@ -90,7 +90,8 @@ async def ai_quiz(client: Client, message: Message):
             completion = await loop.run_in_executor(
                 None,
                 lambda: groq_client.chat.completions.create(
-                    model="llama3-8b-8192",
+                    model="model="llama-3.1-8b-instant",
+                    
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.6,
                     max_tokens=1024
