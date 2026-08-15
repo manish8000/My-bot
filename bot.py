@@ -1,30 +1,40 @@
-import logging
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pyrogram import Client
-from motor.motor_asyncio import AsyncIOMotorClient
 import config
 
-logging.basicConfig(level=logging.INFO)
+# Koyeb Health Check पास करने के लिए छोटा Web Server
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"Bot is Running Alive!")
 
-class QuizBot(Client):
-    def __init__(self):
-        super().__init__(
-            "QuizBotSession",
-            api_id=config.API_ID,
-            api_hash=config.API_HASH,
-            bot_token=config.BOT_TOKEN,
-            plugins=dict(root="plugins")
-        )
-        self.db = AsyncIOMotorClient(config.MONGO_URI)["QuizBotDB"]
+    def log_message(self, format, *args):
+        return  # Logs को साफ़ रखने के लिए HTTP लॉग्स छिपाएँ
 
-    async def start(self):
-        await super().start()
-        print("🚀 Premium Quiz Bot Started Successfully!")
+def run_health_check_server():
+    port = int(os.environ.get("PORT", 8000))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
 
-    async def stop(self, *args):
-        await super().stop()
-        print("🛑 Bot Stopped.")
+# Web Server को background thread में चालू करें
+threading.Thread(target=run_health_check_server, daemon=True).start()
+
+# Bot Setup
+plugins = dict(root="plugins")
+
+app = Client(
+    "QuizBot",
+    api_id=config.API_ID,
+    api_hash=config.API_HASH,
+    bot_token=config.BOT_TOKEN,
+    plugins=plugins
+)
 
 if __name__ == "__main__":
-    app = QuizBot()
+    print("🚀 Premium Quiz Bot Started Successfully!")
     app.run()
-  
+    
