@@ -2,7 +2,7 @@ import os
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from pyrogram.enums import ParseMode, ChatMemberStatus
+from pyrogram.enums import ParseMode
 
 # ----------------- 📌 BASIC & HELP COMMANDS ----------------- #
 
@@ -38,70 +38,34 @@ async def help_cmd(client: Client, message: Message):
         "• `/edit` - Edit Existing Question 📝\n"
         "• `/delete` - Remove a Question 🗑️\n"
         "• `/poll2q` - Convert Poll to Quiz 🔄\n"
-        "• `/scrapepoll` - Scrape Polls from Public Channel 🎧\n"
-        "• `/clone` - Clone Quiz from Official @QuizBot 🧩\n"
-        "• `/queue` - View Ongoing Clone/Pending 🕒\n"
+        "• `/scrapepoll` - Scrape Polls 🎧\n"
+        "• `/clone` - Clone Quiz 🧩\n"
+        "• `/queue` - View Ongoing Clone 🕒\n"
         "• `/help` - Help & Commands 🧭\n"
         "• `/pdfimport` - Import Questions from PDF 📁\n"
         "• `/txtimport` - Import from Text File 📄\n"
         "• `/quizid` - Start Quiz by ID 🧩\n"
         "• `/pdfinfo` - PDF Import Guide 📗\n"
         "• `/htmlinfo` - About HTML Reports 🖥️\n"
-        "• `/htmlreport` - Generate Stylish HTML Report 💼\n"
+        "• `/htmlreport` - Generate HTML Report 💼\n"
         "• `/negmark` - Apply Negative Marking ⚖️\n"
-        "• `/resetpenalty` - Reset All Penalties 🧮\n"
+        "• `/resetpenalty` - Reset Penalties 🧮\n"
         "• `/stop` - Stop Quiz Immediately 🛑\n"
         "• `/cancel` - Cancel Current Operation 🛑\n"
         "• `/create` - Build a New Quiz 🛠️\n"
         "• `/myquizzes` - View Your Quizzes 💼\n"
-        "• `/features` - Explore All Features 🎟️\n"
-        "• `/premium` - Upgrade to Premium 💎\n"
-        "• `/premiumlist` - List of Premium Users 📜\n"
-        "• `/premiuminfo` - Premium Benefits Info 📄\n"
-        "• `/delpremium` - Remove Premium Access 🚫\n\n"
-        "⚙️ **Advanced & Admin Controls:**\n"
-        "• `/delquizdb` - Delete Quiz Database 🗑️\n"
-        "• `/userprofile` - View User Profile 👨‍💼\n"
-        "• `/info` - Get Info About Quiz Creator 👤\n"
+        "• `/features` - Explore Features 🎟️\n"
+        "• `/premium` - Upgrade to Premium 💎\n\n"
+        "🤖 **AI & Advanced Tools:**\n"
+        "• `/aiquiz` - Generate Quiz using AI 🤖\n"
         "• `/pause` - Pause Quiz Temporarily ⏸️\n"
         "• `/resume` - Resume Paused Quiz ▶️\n"
-        "• `/fast` - Activate Fast Quiz Mode ⚡\n"
-        "• `/slow` - Activate Slow Quiz Mode 🐢\n"
+        "• `/fast` - Fast Quiz Speed ⚡\n"
+        "• `/slow` - Slow Quiz Speed 🐢\n"
         "• `/normal` - Reset to Normal Speed 🔄\n"
         "• `/broadcast` - Broadcast Message 📢\n"
-        "• `/stopcast` - Stop Ongoing Broadcast ✋\n"
-        "• `/ban` - Disable User Access 🚫\n"
-        "• `/unban` - Reinstate User Access ♻️\n"
-        "• `/mocktest` - Start Interactive HTML-Based Test 📑\n"
-        "• `/users` - Show All Registered Users 👥\n"
-        "• `/chats` - Show All Active Chats 💬\n"
-        "• `/banlist` - View Banned Users List 📄\n"
-        "• `/leavegrp` - Leave Group Automatically 🚪\n"
-        "• `/schedule` - Schedule Quiz (Group Only) 📅\n"
-        "• `/listschedule` - Show All Scheduled Quizzes 📋\n"
-        "• `/cancel_schedule` - Cancel Scheduled Quiz ❌\n"
-        "• `/html` - Convert HTML to TXT 🖥️\n"
-        "• `/tx2html` - Convert TXT to Advanced HTML 📑\n"
-        "• `/pdf2txt` - Convert Any PDF Questions to .TXT 📘\n"
-        "• `/pdf2mcq` - Auto-Convert Image-Based Book to MCQ 📷\n"
-        "• `/auth` - Authorize New Admin User 🔐\n"
-        "• `/rem_auth` - Remove Authorized Admin 🧹\n"
-        "• `/userban` - Ban User from Session 🚫\n"
-        "• `/userunban` - Unban User from Session 🔄\n"
-        "• `/quizdb` - Show Cloned Quizzes 🗂️\n"
-        "• `/aiquiz` - Generate Quiz Automatically using AI 🤖\n"
-        "• `/mode` - Activate Maintenance Mode 🛠️\n"
-        "• `/activemode` - Check Current Active Mode 🌐\n"
-        "• `/cancelmode` - Cancel Active Mode 🧩\n"
-        "• `/purge` - Delete Bot Messages 🧹\n"
-        "• `/welcome` - Enable/Disable Welcome Message 👋\n"
-        "• `/goodbye` - Enable/Disable Goodbye Message 👋\n"
-        "• `/mute` - Mute Members in Group 🔇\n"
-        "• `/unmute` - Unmute Members 🔊\n"
-        "• `/groupban` - Ban from Group + Remove Messages 🚫\n"
-        "• `/rejoin` - Unbanned Member Can Join 🔄\n"
-        "• `/clearviolations` - Clear Violations 🧹\n"
-        "• `/topic` - Create Quiz Topic Announcement 📣"
+        "• `/mute` - Mute Member in Group 🔇\n"
+        "• `/unmute` - Unmute Member 🔊"
     )
     await message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
@@ -109,7 +73,7 @@ async def help_cmd(client: Client, message: Message):
 
 @Client.on_message(filters.command("create"))
 async def create_quiz(client: Client, message: Message):
-    await message.reply_text("🛠️ **Quiz Builder Started!**\n\nकृपया अपने क्विज़ का टाइटल भेजें:")
+    await message.reply_text("🛠️ **Quiz Builder Started!**\n\nअपने क्विज़ का नाम/टाइटल भेजें:")
 
 @Client.on_message(filters.command("myquizzes"))
 async def my_quizzes(client: Client, message: Message):
@@ -137,7 +101,7 @@ async def clone_quiz(client: Client, message: Message):
 
 @Client.on_message(filters.command("aiquiz"))
 async def ai_quiz(client: Client, message: Message):
-    await message.reply_text("🤖 **AI Quiz Generator:**\n\nजिस टॉपिक पर क्विज़ चाहिए उसका नाम लिखें: (जैसे: `/aiquiz Rajasthan GK`)")
+    await message.reply_text("🤖 **AI Quiz Generator:**\n\nजिस विषय पर क्विज़ चाहिए उसका नाम लिखें: (जैसे: `/aiquiz Rajasthan GK`)")
 
 # ----------------- ⏱️ CONTROL & SPEED COMMANDS ----------------- #
 
@@ -165,13 +129,13 @@ async def slow_speed(client: Client, message: Message):
 async def normal_speed(client: Client, message: Message):
     await message.reply_text("🔄 **Normal Speed Restored!** (30 सेकंड टाइमर)")
 
-# ----------------- 🛡️ GROUP & ADMIN MODERATION ----------------- #
+# ----------------- 🛡️ MODERATION COMMANDS ----------------- #
 
 @Client.on_message(filters.command("mute") & filters.group)
 async def mute_user(client: Client, message: Message):
     if not message.reply_to_message:
-        return await message.reply_text("🔇 कृपया जिस यूज़र को म्यूट करना है उसके मैसेज पर Reply करके `/mute` लिखें।")
-    await message.reply_text(f"🔇 **{message.reply_to_message.from_user.first_name}** को ग्रुप में म्यूट कर दिया गया है।")
+        return await message.reply_text("🔇 कृपया जिसे म्यूट करना है उसके मैसेज पर Reply करके `/mute` लिखें।")
+    await message.reply_text(f"🔇 **{message.reply_to_message.from_user.first_name}** को म्यूट कर दिया गया है।")
 
 @Client.on_message(filters.command("unmute") & filters.group)
 async def unmute_user(client: Client, message: Message):
@@ -181,7 +145,7 @@ async def unmute_user(client: Client, message: Message):
 
 @Client.on_message(filters.command("broadcast"))
 async def broadcast_msg(client: Client, message: Message):
-    await message.reply_text("📢 **Broadcast Started!** सभी बॉट यूज़र्स को संदेश भेजा जा रहा है...")
+    await message.reply_text("📢 **Broadcast Started!** मैसेज भेजा जा रहा है...")
 
 @Client.on_message(filters.command("premium"))
 async def premium_info(client: Client, message: Message):
@@ -191,4 +155,5 @@ async def premium_info(client: Client, message: Message):
         "• HTML Result Card & Leaderboard\n"
         "• AI Auto Quiz Maker\n\n"
         "संपर्क करें Admin से प्रीमियम लेने के लिए।"
-)
+    )
+    
