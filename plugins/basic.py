@@ -5,7 +5,8 @@ from pyrogram.types import Message
 async def start_cmd(client: Client, message: Message):
     user = message.from_user
     db = client.db["users"]
-    await db.update_one({"user_id": user.id}, {"$set": {"name": user.full_name}}, upsert=True)
+    user_name = user.first_name + (f" {user.last_name}" if user.last_name else "")
+    await db.update_one({"user_id": user.id}, {"$set": {"name": user_name}}, upsert=True)
     
     await message.reply_text(
         f"🪐 **Hello {user.first_name}!**\n\n"
@@ -47,4 +48,4 @@ async def features_cmd(client: Client, message: Message):
         "4. Auto-Scrape Polls from Public Channels\n"
         "5. Group Moderation (Mute/Ban/Welcome)"
     )
-  
+    
