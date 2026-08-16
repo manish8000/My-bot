@@ -10,3 +10,6 @@ MONGO_URI = os.environ.get("MONGO_URI", "YOUR_MONGO_URI")
 
 # Admin Settings
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
+
+# Groq AI Settings
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
