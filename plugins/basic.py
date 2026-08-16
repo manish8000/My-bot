@@ -169,7 +169,7 @@ async def ai_quiz(client: Client, message: Message):
     except Exception as e:
         await status_msg.edit_text(f"❌ Quiz जनरेट करने में त्रुटि: `{e}`")
 
-# ----------------- 3. POLL SCORE TRACKER ----------------- #
+# ----------------- 3. POLL SCORE TRACKER (FIXED) ----------------- #
 
 @Client.on_raw_update()
 async def process_raw_poll_answer(client: Client, update, users, chats):
@@ -180,7 +180,13 @@ async def process_raw_poll_answer(client: Client, update, users, chats):
         if poll_id not in QUIZ_ANSWERS or not update.options:
             return
 
-        selected_option = int(update.options[0])
+        # Bytes को safe तरीके से integer में बदलने का फिक्स
+        raw_opt = update.options[0]
+        if isinstance(raw_opt, bytes):
+            selected_option = int.from_bytes(raw_opt, byteorder="big")
+        else:
+            selected_option = int(raw_opt)
+
         correct_option = QUIZ_ANSWERS[poll_id]
 
         user_obj = users.get(user_id)
@@ -197,6 +203,7 @@ async def process_raw_poll_answer(client: Client, update, users, chats):
         else:
             USER_SCORES[user_id]["wrong"] += 1
             USER_SCORES[user_id]["score"] -= 0.33
+            
 
 # ----------------- 4. SPEED & CONTROLS ----------------- #
 
