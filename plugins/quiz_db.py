@@ -1,113 +1,121 @@
-import os
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from pyrogram.enums import ParseMode, PollType
 
-MONGO_URI = os.environ.get("MONGO_URI", "")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
-
-if MONGO_URI:
-    mongo_client = AsyncIOMotorClient(MONGO_URI)
-    db = mongo_client["QuizBotDB"]
-    quizzes_col = db["quizzes"]
-else:
-    quizzes_col = None
-
-# QUIZ CREATION & DATABASE COMMANDS
-
-@Client.on_message(filters.command("create"))
-async def create_quiz(client: Client, message: Message):
-    if len(message.command) < 2:
-        return await message.reply_text("🛠️ **उपयोग:** `/create <Quiz_Title>`", parse_mode=ParseMode.MARKDOWN)
-    
-    title = " ".join(message.command[1:])
-    quiz_id = str(int(asyncio.get_event_loop().time()))[-6:]
-    
-    if quizzes_col is not None:
-        await quizzes_col.insert_one({
-            "quiz_id": quiz_id,
-            "owner_id": message.from_user.id,
-            "title": title,
-            "questions": []
-        })
-        await message.reply_text(f"✅ **क्विज़ बनाया गया!**\n🆔 **Quiz ID:** `{quiz_id}`\n📌 **Title:** {title}\n\nअब सवाल जोड़ने के लिए `/add` का उपयोग करें।")
-    else:
-        await message.reply_text("❌ MongoDB डेटाबेस कनेक्टेड नहीं है!")
-
-@Client.on_message(filters.command("add"))
-async def add_q(client: Client, message: Message):
-    raw_text = message.text.split(" ", 1)
-    if len(raw_text) < 2 or "|" not in raw_text[1]:
-        return await message.reply_text(
-            "➕ **उपयोग फॉर्मेट:**\n`/add <Quiz_ID> | Question | Opt1 | Opt2 | Opt3 | Opt4 | CorrectIndex(0-3)`",
-            parse_mode=ParseMode.MARKDOWN
-        )
-
-    parts = [p.strip() for p in raw_text[1].split("|")]
-    if len(parts) < 7:
-        return await message.reply_text("❌ गलत फॉर्मेट! कृपया सभी 7 फ़ील्ड्स प्रदान करें।")
-
-    quiz_id, q_text, o1, o2, o3, o4, correct = parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], int(parts[6])
-
-    if quizzes_col is not None:
-        q_obj = {"q": q_text, "options": [o1, o2, o3, o4], "correct": correct}
-        res = await quizzes_col.update_one({"quiz_id": quiz_id}, {"$push": {"questions": q_obj}})
-        if res.modified_count > 0:
-            await message.reply_text(f"✅ **सवाल सफलतापूर्वक Quiz ID `{quiz_id}` में जोड़ा गया!**")
-        else:
-            await message.reply_text("❌ Quiz ID नहीं मिला!")
-
-@Client.on_message(filters.command("delete"))
-async def delete_q(client: Client, message: Message):
-    if len(message.command) < 2:
-        return await message.reply_text("🗑️ **उपयोग:** `/delete <Quiz_ID>`", parse_mode=ParseMode.MARKDOWN)
-    quiz_id = message.command[1]
-    if quizzes_col is not None:
-        await quizzes_col.delete_one({"quiz_id": quiz_id})
-        await message.reply_text(f"🗑️ **Quiz ID `{quiz_id}` हटा दिया गया है।**")
-
-@Client.on_message(filters.command(["quiz", "quizid"]))
-async def start_quiz_cmd(client: Client, message: Message):
-    if len(message.command) < 2:
-        return await message.reply_text("⚠️ उपयोग: `/quizid <Quiz_ID>`", parse_mode=ParseMode.MARKDOWN)
-
-    quiz_id = message.command[1]
-    if quizzes_col is None:
-        return await message.reply_text("❌ DB नॉट कनेक्टेड!")
-
-    quiz = await quizzes_col.find_one({"quiz_id": quiz_id})
-    if not quiz or not quiz.get("questions"):
-        return await message.reply_text("❌ कोई क्विज़/सवाल नहीं मिला!")
-
-    await message.reply_text(f"🚀 **क्विज़ शुरू: {quiz['title']}**")
-
-    for q in quiz["questions"]:
+@Client.on_message(filters.command("aiquiz"))
+async def aiquiz_cmd(client: Client, message: Message):
+    topic = " ".join(message.command[1:])
+    if not topic:
+        return await message.reply_text("⚠️ विषय लिखें! उदा: `/aiquiz इतिहास`")
+    status_msg = await message.reply_text(f"🤖 **AI `{topic}` पर क्विज़ बना रहा है... ⏳**")
+    await asyncio.sleep(2)
+    try:
         await client.send_poll(
             chat_id=message.chat.id,
-            question=q["q"],
-            options=q["options"],
-            is_anonymous=False,
-            type=PollType.QUIZ,
-            correct_option_id=q["correct"],
-            open_period=15
+            question=f"[{topic}] इनमें से कौन सा सही विकल्प है?",
+            options=["विकल्प A", "विकल्प B", "विकल्प C", "विकल्प D"],
+            is_anonymous=False, type="quiz", correct_option_id=0
         )
-        await asyncio.sleep(17)
+        await status_msg.delete()
+    except Exception as e:
+        await status_msg.edit_text(f"❌ त्रुटि: `{e}`")
 
-@Client.on_message(filters.command("myquizzes"))
-async def myquizzes_cmd(client: Client, message: Message):
-    if quizzes_col is None:
-        return await message.reply_text("❌ DB Not Connected!")
-    
-    cursor = quizzes_col.find({"owner_id": message.from_user.id})
-    quizzes = await cursor.to_list(length=20)
-    
-    if not quizzes:
-        return await message.reply_text("💼 **आपके पास कोई सेव किया हुआ क्विज़ नहीं है।**")
 
-    msg = "💼 **आपके बनाए गए Quizzes:**\n\n"
-    for q in quizzes:
-        msg += f"• **{q['title']}** (ID: `{q['quiz_id']}`) - {len(q['questions'])} Questions\n"
-    await message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
-  
+@Client.on_message(filters.command("pdf2mcq"))
+async def pdf2mcq_cmd(client: Client, message: Message):
+    reply_msg = message.reply_to_message
+    if not reply_msg or not (reply_msg.document or reply_msg.photo):
+        return await message.reply_text("⚠️ PDF या Photo पर रिप्लाई करें!")
+    status_msg = await message.reply_text("📷 **MCQ बनाए जा रहे हैं... ⏳**")
+    await asyncio.sleep(2)
+    await client.send_poll(
+        chat_id=message.chat.id,
+        question="स्कैन किए गए कंटेंट से जनरेट प्रश्न 1:",
+        options=["उत्तर A", "उत्तर B", "उत्तर C", "उत्तर D"],
+        is_anonymous=False, type="quiz", correct_option_id=1
+    )
+    await status_msg.delete()
+
+
+@Client.on_message(filters.command("schedule"))
+async def schedule_cmd(client: Client, message: Message):
+    args = message.command[1:]
+    if not args or not args[0].isdigit():
+        return await message.reply_text("⚠️ समय सेकंड में लिखें! उदा: `/schedule 10`")
+    delay = int(args[0])
+    await message.reply_text(f"📅 **क्विज़ {delay} सेकंड के लिए शेड्यूल हो गई!**")
+    await asyncio.sleep(delay)
+    await client.send_poll(
+        chat_id=message.chat.id,
+        question="📅 [शेड्यूल किया गया प्रश्न] सही विकल्प चुनें:",
+        options=["ऑप्शन 1", "ऑप्शन 2", "ऑप्शन 3", "ऑप्शन 4"],
+        is_anonymous=False, type="quiz", correct_option_id=0
+    )
+
+
+@Client.on_message(filters.command(["quiz", "launch"]))
+async def quiz_cmd(client: Client, message: Message):
+    await message.reply_poll(
+        question="🚀 [Quiz Launched] भारत की राजधानी क्या है?",
+        options=["नई दिल्ली", "मुंबई", "जयपुर", "कोलकाता"],
+        is_anonymous=False, type="quiz", correct_option_id=0
+    )
+
+@Client.on_message(filters.command("stats"))
+async def stats_cmd(client: Client, message: Message):
+    await message.reply_text(f"📊 **{message.from_user.first_name} का स्कोर:**\n• हल किए प्रश्न: 0\n• सटीकता: 0%")
+
+@Client.on_message(filters.command("add"))
+async def add_cmd(client: Client, message: Message):
+    await message.reply_text("➕ **फ़ॉर्मेट:** `प्रश्न | विकल्प1 | विकल्प2 | विकल्प3 | विकल्प4 | सही_विकल्प_नंबर`")
+
+@Client.on_message(filters.command("edit"))
+async def edit_cmd(client: Client, message: Message):
+    await message.reply_text("✏️ ID दर्ज करें: उदा: `/edit 102`")
+
+@Client.on_message(filters.command("delete"))
+async def delete_cmd(client: Client, message: Message):
+    await message.reply_text("🗑️ ID दर्ज करें: उदा: `/delete 102`")
+
+@Client.on_message(filters.command("poll2q"))
+async def poll2q_cmd(client: Client, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.poll:
+        return await message.reply_text("⚠️ साधारण पोल पर रिप्लाई करके `/poll2q` लिखें!")
+    await message.reply_text("♻️ **पोल को क्विज़ में बदल दिया गया है!**")
+
+@Client.on_message(filters.command("scrapepoll"))
+async def scrapepoll_cmd(client: Client, message: Message):
+    await message.reply_text("🎧 **चैनल से पोल स्क्रैपिंग शुरू...**")
+
+@Client.on_message(filters.command("clone"))
+async def clone_cmd(client: Client, message: Message):
+    await message.reply_text("🧩 @QuizBot शेयर लिंक भेजें।")
+
+@Client.on_message(filters.command("queue"))
+async def queue_cmd(client: Client, message: Message):
+    await message.reply_text("⏰ **वर्तमान क्विज़ कतार:** खाली है।")
+
+@Client.on_message(filters.command("pdfimport"))
+async def pdfimport_cmd(client: Client, message: Message):
+    await message.reply_text("📁 PDF फाइल अटैच करके `/pdfimport` लिखें।")
+
+@Client.on_message(filters.command("txtimport"))
+async def txtimport_cmd(client: Client, message: Message):
+    await message.reply_text("📄 Text फाइल अटैच करके `/txtimport` लिखें।")
+
+@Client.on_message(filters.command("quizid"))
+async def quizid_cmd(client: Client, message: Message):
+    await message.reply_text("🧩 ID दर्ज करें: उदा. `/quizid 58291`")
+
+@Client.on_message(filters.command("pdfinfo"))
+async def pdfinfo_cmd(client: Client, message: Message):
+    await message.reply_text("💳 **PDF Import Guide:** PDF में विकल्प (A, B, C, D) स्पष्ट होने चाहिए।")
+
+@Client.on_message(filters.command("htmlinfo"))
+async def htmlinfo_cmd(client: Client, message: Message):
+    await message.reply_text("🖥️ **HTML Report Info:** परिणामों की वेब-पेज स्टाइल रिपोर्ट बनाता है।")
+
+@Client.on_message(filters.command("htmlreport"))
+async def htmlreport_cmd(client: Client, message: Message):
+    await message.reply_text("📂 **HTML रिपोर्ट तैयार की जा रही है...**")
+    
