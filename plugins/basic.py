@@ -115,8 +115,9 @@ async def ai_quiz(client: Client, message: Message):
         return await status_msg.edit_text("❌ GROQ_API_KEY सेट नहीं है!")
 
     prompt = (
-        f"Create 3 multiple choice quiz questions on topic '{topic}' in Hindi. "
+        f"Create 3 short multiple choice quiz questions on topic '{topic}' in Hindi. "
         "Output ONLY a raw JSON array of objects. Do not include markdown formatting. "
+        "Each question must be under 200 characters and each option under 80 characters. "
         "Each object must have these exact keys: "
         "'question' (string), 'options' (array of 4 strings), 'correct_option' (integer 0-3 index), 'explanation' (string)."
     )
@@ -140,7 +141,11 @@ async def ai_quiz(client: Client, message: Message):
                 raw_text = raw_text[4:]
         
         questions = json.loads(raw_text.strip())
-        await status_msg.delete()
+        
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
 
         ONGOING_QUIZZES[message.chat.id] = True
 
@@ -150,14 +155,20 @@ async def ai_quiz(client: Client, message: Message):
             while message.chat.id in PAUSED_QUIZZES:
                 await asyncio.sleep(2)
 
+            # Telegram Poll limits fix (Question max 255 chars, Options max 100 chars)
+            safe_question = str(q["question"])[:200]
+            poll_question = f"{safe_question}\n\n⏱️ {QUIZ_TIMELIMIT}s | ⚖️ (-1/3)"
+            safe_options = [str(opt)[:95] for opt in q["options"]]
+            safe_explanation = str(q.get("explanation", "1/3 नेगेटिव मार्किंग लागू है!"))[:190]
+
             poll_msg = await client.send_poll(
                 chat_id=message.chat.id,
-                question=q["question"] + f"\n\n⏱️ समय: {QUIZ_TIMELIMIT}s | ⚖️ (-1/3 Mark)",
-                options=q["options"],
+                question=poll_question,
+                options=safe_options,
                 is_anonymous=False,
                 type=PollType.QUIZ,
                 correct_option_id=int(q["correct_option"]),
-                explanation=q.get("explanation", "1/3 नेगेटिव मार्किंग लागू है!"),
+                explanation=safe_explanation,
                 open_period=QUIZ_TIMELIMIT
             )
             QUIZ_ANSWERS[str(poll_msg.poll.id)] = int(q["correct_option"])
@@ -167,7 +178,10 @@ async def ai_quiz(client: Client, message: Message):
         await message.reply_text("🎉 **क्विज़ पूरा हुआ!**\nरैंकिंग देखने के लिए `/leaderboard` टाइप करें।")
 
     except Exception as e:
-        await status_msg.edit_text(f"❌ Quiz जनरेट करने में त्रुटि: `{e}`")
+        try:
+            await status_msg.edit_text(f"❌ Quiz जनरेट करने में त्रुटि: `{e}`")
+        except Exception:
+            await message.reply_text(f"❌ Quiz जनरेट करने में त्रुटि: `{e}`")
 
 # ----------------- 3. POLL SCORE TRACKER (FIXED) ----------------- #
 
