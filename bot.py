@@ -5,7 +5,7 @@ from pyrogram import Client
 from motor.motor_asyncio import AsyncIOMotorClient
 import config
 
-# Koyeb Health Check Web Server
+# ---------------- 1. Health Check Web Server for Koyeb / Render ---------------- #
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -21,31 +21,22 @@ def run_health_check_server():
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
+# वेब सर्वर को बैकग्राउंड थ्रेड में स्टार्ट करें
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
-# MongoDB Setup
-mongo_client = AsyncIOMotorClient(
-    config.MONGO_URI,
-    tls=True,
-    tlsAllowInvalidCertificates=True
-)
-db = mongo_client["QuizBotDB"]
-
-# Bot Setup
+# ---------------- 2. Pyrogram Bot Client Setup ---------------- #
 plugins = dict(root="plugins")
 
 app = Client(
-    "QuizBot",
+    "my_bot",
     api_id=config.API_ID,
     api_hash=config.API_HASH,
     bot_token=config.BOT_TOKEN,
-    in_memory=True,  # 👈 इससे बार-बार Session Login Error और FloodWait की समस्या हल होगी
     plugins=plugins
 )
 
-app.db = db
-
+# ---------------- 3. Run Bot ---------------- #
 if __name__ == "__main__":
-    print("🚀 Premium Quiz Bot Started Successfully!")
+    print("🤖 Bot is starting and loading plugins...")
     app.run()
     
