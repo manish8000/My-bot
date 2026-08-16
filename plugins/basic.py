@@ -1,6 +1,7 @@
 import os
 import asyncio
 import json
+import PyPDF2
 from groq import Groq
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -254,4 +255,58 @@ async def normal_cmd(client: Client, message: Message):
     global QUIZ_TIMELIMIT
     QUIZ_TIMELIMIT = 15
     await message.reply_text("🔄 **Normal Speed (15s Timer Restored)**")
+
+# ----------------- 5. PDF TO TEXT CONVERTER ----------------- #
+
+@Client.on_message(filters.command("pdf2txt"))
+async def pdf_to_text_cmd(client: Client, message: Message):
+    reply_msg = message.reply_to_message
+    doc = None
+
+    if reply_msg and reply_msg.document:
+        doc = reply_msg.document
+    elif message.document:
+        doc = message.document
+
+    if not doc or not doc.file_name.lower().endswith('.pdf'):
+        return await message.reply_text("⚠️ कृपया किसी PDF फ़ाइल को रिप्लाई करते हुए या अटैच करके `/pdf2txt` लिखें!")
+
+    status_msg = await message.reply_text("📥 **PDF डाउनलोड और टेक्स्ट एक्सट्रैक्ट किया जा रहा है...**")
+
+    try:
+        file_path = await client.download_media(doc)
         
+        extracted_text = ""
+        with open(file_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            for page in reader.pages:
+                text = page.extract_text()
+                if text:
+                    extracted_text += text + "\n\n"
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        if not extracted_text.strip():
+            return await status_msg.edit_text("❌ इस PDF में कोई टेक्स्ट नहीं मिला (शायद यह इमेज-आधारित या स्कैन PDF है)।")
+
+        if len(extracted_text) > 3500:
+            txt_filename = f"{doc.file_name.rsplit('.', 1)[0]}.txt"
+            with open(txt_filename, "w", encoding="utf-8") as f:
+                f.write(extracted_text)
+            
+            await message.reply_document(
+                document=txt_filename,
+                caption="📄 **आपकी PDF का टेक्स्ट एक्सट्रैक्ट कर दिया गया है!**"
+            )
+            os.remove(txt_filename)
+            await status_msg.delete()
+        else:
+            await status_msg.edit_text(f"📝 **Extracted Text:**\n\n{extracted_text}")
+
+    except Exception as e:
+        try:
+            await status_msg.edit_text(f"❌ PDF एक्सट्रैक्ट करने में त्रुटि: `{e}`")
+        except Exception:
+            await message.reply_text(f"❌ PDF एक्सट्रैक्ट करने में त्रुटि: `{e}`")
+                
