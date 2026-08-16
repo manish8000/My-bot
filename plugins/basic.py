@@ -3,7 +3,7 @@ import asyncio
 import json
 from groq import Groq
 from pyrogram import Client, filters
-from pyrogram.types import Message, PollAnswer
+from pyrogram.types import Message, Poll
 from pyrogram.enums import ParseMode, PollType
 
 # Environment Variables
@@ -168,7 +168,7 @@ async def ai_quiz(client: Client, message: Message):
 # ----------------- 3. 1/3 NEGATIVE MARKING & RANKING TRACKER ----------------- #
 
 @Client.on_poll_answer()
-async def process_poll_answer(client: Client, poll_answer: PollAnswer):
+async def process_poll_answer(client: Client, poll_answer):
     poll_id = poll_answer.poll_id
     user = poll_answer.user
     user_id = user.id
@@ -390,3 +390,4 @@ async def rem_auth_cmd(client: Client, message: Message):
     uid = int(message.command[1])
     AUTH_USERS.discard(uid)
     await message.reply_text(f"🔓 User `{uid}` authorization removed.")
+    
